@@ -17,4 +17,4 @@ survey <- gross_data %>%
   
 #Step 2 : preparing brand awareness long format
 aware <- survey %>%
-  select(QUEST, )
+  select(QUEST,B1A, B1B)
