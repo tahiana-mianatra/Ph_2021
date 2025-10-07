@@ -22,6 +22,9 @@ round_excel <- function(x, digits = 0) {
   z <- z / 10^digits
   z * posneg
 }
+shift_trans = function(d = 0) {
+  scales::trans_new("shift", transform = function(x) x - d, inverse = function(x) x + d)
+}
 #Select all the note of satisfaction
 note <- survey %>%
   select(QUEST, starts_with("D1") )
@@ -70,4 +73,42 @@ comparison_score <- mean_score %>%
     )
   ) %>%
   select(brand, comparison)
+
+score <- mean_score %>%
+  left_join(sd_score, by = "brand") %>%
+  left_join(pval_score, by = "brand") %>%
+  left_join(comparison_score, by = "brand")
+rm(mean_score, sd_score, pval_score, comparison_score)
+
+#Plot
+p <- score %>%
+  ggplot(aes(x = brand, y = mean, fill = brand)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_text(
+    data = score %>% filter(comparison == "no_difference" | is.na(comparison)),
+    aes(label = mean),
+    vjust = -0.1
+  ) +
+  geom_label(
+    data = score %>% filter(comparison == "inferior"),
+    aes(label = mean),
+    vjust = -0.1,
+    color = "red",
+    fill = "white"
+  ) +
+  labs(title = "Satisfaction note") +
+  geom_hline(yintercept = 6.8, linetype = "solid", color = "red", linewidth = 1) +
+  scale_y_continuous(limits = c(0, 10),
+                     breaks = c(0, 6.8, 10),
+                     trans = shift_trans(6.8)) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid = element_blank(),
+    axis.text.x = element_text(face = "bold", colour = "black"),
+    axis.text.y = element_blank(),
+    legend.position = "none"
+  )
+
+print(p)
 
