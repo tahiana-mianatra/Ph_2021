@@ -11,7 +11,7 @@ gross_data<- read_excel(here::here("02_Input", "Base_VF.xlsx"))
 #Step 1: removing 11 from D1
 survey <- gross_data %>%
   mutate(across(
-    .cols = D1A ,
+    .cols = starts_with("D1"),
     .fns = ~ replace(.x, .x == 11, NA)                
   ))
 #Step 2: removing 99 from B1A; B1B
