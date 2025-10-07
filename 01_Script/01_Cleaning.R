@@ -18,7 +18,7 @@ survey <- gross_data %>%
 survey <- survey %>%
   mutate(across(
     .cols = c(B1A, B1B) ,
-    .fns = ~replace(.x , x == 99, NA)
+    .fns = ~replace(.x , .x == 99, NA)
   ))
 #Step 3 : preparing brand awareness long format
 aware <- survey %>%
@@ -36,6 +36,23 @@ spont <- aware %>%
   mutate(
     brand = as.numeric(brand)
   )
+#Check for duplicate within spontaneous (should be no data)
+dup_spont <- aware %>%
+  filter(!is.na(B1B)) %>%
+  separate_rows(B1B, sep = "-") %>%
+  count(QUEST, B1B, name = "n") %>%
+  filter(n > 1) %>%
+  rename(brand = B1B)
+#Check for duplicate for TOM and spontaneous (should be no data)
+tom_spont_conflict <- aware %>%
+  filter(!is.na(B1B)) %>%
+  separate_rows(B1B, sep = "-") %>%
+  inner_join(
+    aware %>% select(QUEST, TOM = B1A),
+    by = "QUEST"
+  ) %>%
+  filter(B1B == TOM) %>%
+  select(QUEST, brand = TOM)
  #Assisted awareness
 assisted <- survey %>%
   select(QUEST, starts_with("B2_")) %>%
@@ -51,4 +68,9 @@ assisted <- survey %>%
   ) %>%
   select(QUEST, brand, type)
   
-  
+  #Combining all the awareness
+aware_long_complete <- bind_rows(tom, spont, assisted) %>%
+  distinct(QUEST, brand, type)
+#Writing the data
+save(survey, aware_long_complete,
+     file = here::here("03_Df_output", "cleaned_data.RData"))
