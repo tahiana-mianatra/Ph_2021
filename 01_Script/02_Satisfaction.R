@@ -121,7 +121,7 @@ p <- score %>%
     color = "red",
     fill = "white"
   ) +
-  labs(title = "Satisfaction note") +
+  labs( caption = "Base: Respondents who have rated each brand", title = "Satisfaction note") +
   geom_hline(yintercept = 6.8, linetype = "solid", color = "red", linewidth = 1) +
   scale_y_continuous(limits = c(0, 10),
                      breaks = c(0, 6.8, 10),
@@ -133,6 +133,13 @@ p <- score %>%
     panel.grid = element_blank(),
     axis.text.x = element_text(face = "bold", colour = "black"),
     axis.text.y = element_blank(),
+    plot.caption = element_text(
+      size = 12,                    # Larger font size
+      hjust = 0.5,                  # Center alignment (0=left, 0.5=center, 1=right)
+      vjust = 1,                    # Vertical position
+      face = "italic",              # Optional: italic style
+      margin = margin(t = 10)       # Add space above caption
+    ),
     legend.position = "none"
   )
 
