@@ -31,7 +31,7 @@ tom <- aware %>%
 spont <- aware %>%
   filter(!is.na(B1B)) %>%
   separate_rows(B1B, sep = "-") %>%
-  filter(!is.na(B1B) & B1B =="") %>%
+  filter(!is.na(B1B) & B1B !="") %>%
   transmute(QUEST, brand = B1B, type = "Spontaneous" ) %>%
   mutate(
     brand = as.numeric(brand)
@@ -70,7 +70,32 @@ assisted <- survey %>%
   
   #Combining all the awareness
 aware_long_complete <- bind_rows(tom, spont, assisted) %>%
-  distinct(QUEST, brand, type)
+  distinct
+#Step 4 Recoding C15, C16, N/A and mc
+reason_no <- survey %>%
+  filter(A1 == 1) %>%
+  select(QUEST, C15, C16) %>%
+  mutate(across(
+    .cols = c(C15, C16),
+    .fns = ~ replace(.x, is.na(.x), 99)                
+  ))
+C15_long <- reason_no %>%
+  select(QUEST, C15) %>%
+  filter(!is.na(C15)) %>%
+  separate_rows(C15, sep = "-") %>%
+  filter(!is.na(C15) & C15 !="") %>%
+  mutate(
+    C15 = as.numeric(C15)
+  )
+C16_long <- reason_no %>%
+  select(QUEST, C16) %>%
+  filter(!is.na(C16)) %>%
+  separate_rows(C16, sep = "-") %>%
+  filter(!is.na(C16) & C16 !="") %>%
+  mutate(
+    C16 = as.numeric(C16)
+  )
 #Writing the data
-save(survey, aware_long_complete,
+save(survey, aware_long_complete, C15_long, C16_long,
      file = here::here("03_Df_output", "cleaned_data.RData"))
+
