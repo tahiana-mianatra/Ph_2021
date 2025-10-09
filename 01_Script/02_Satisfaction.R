@@ -12,7 +12,7 @@ library(ggtext)
 
 #Load data
 load(here::here("03_Df_output", "cleaned_data.RData"))
-rm("aware_long_complete")
+rm(aware_long_complete, C15_long, C16_long)
 #Load function
 round_excel <- function(x, digits = 0) {
   posneg <- sign(x)
