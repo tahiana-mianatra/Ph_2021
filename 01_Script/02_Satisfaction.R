@@ -144,4 +144,5 @@ p <- score %>%
   )
 
 print(p)
-
+ggsave(here::here("04_Graphic_output", "satisfaction.png"),
+       plot = p, width = 10, height = 6, dpi = 600)
