@@ -11,6 +11,7 @@ library(grid)
 library(ggtext)
 
 load(here::here("03_Df_output", "cleaned_data.RData"))
+rm(C15_long, C16_long)
 #Load function
 round_excel <- function(x, digits = 0) {
   posneg <- sign(x)
@@ -23,3 +24,5 @@ round_excel <- function(x, digits = 0) {
 shift_trans = function(d = 0) {
   scales::trans_new("shift", transform = function(x) x - d, inverse = function(x) x + d)
 }
+
+#Profil variable A3(Age), A4E (Education), A4B (CSP)
