@@ -9,7 +9,7 @@ library(scales)
 library(magick)
 library(grid)
 library(ggtext)
-library(broom)
+library(broom) #for clean result on prop.test
 
 load(here::here("03_Df_output", "cleaned_data.RData"))
 rm(C15_long, C16_long)
@@ -147,8 +147,43 @@ test_subgroup <- function(subgroup_name, subgroup_value) {
 }
 
 # Run tests for all subgroups
-test_results <- bind_rows(
-  map2("age_group", unique(profile$age_group), test_subgroup),
-  map2("educ", unique(profile$educ), test_subgroup),
-  map2("CSP", unique(profile$CSP), test_subgroup)
+Age_results <- map_dfr(unique(profile$age_group), 
+                       ~test_subgroup("age_group", .x))
+
+Educ_result <- map_dfr(unique(profile$educ), 
+                       ~test_subgroup("educ", .x))
+
+CSP_result <- map_dfr(unique(profile$CSP), 
+                      ~test_subgroup("CSP", .x))
+test_result <- Age_results %>%
+  select(subgroup, p.value)
+test_result2 <- Educ_result %>%
+  select(subgroup, p.value)
+test_result3 <- CSP_result %>%
+  select(subgroup, p.value)
+#mutate to character to allow bind_rows because of ordered label earlier
+test_result_final <- bind_rows(
+  test_result %>% mutate(subgroup = as.character(subgroup)),
+  test_result2 %>% mutate(subgroup = as.character(subgroup)),
+  test_result3 %>% mutate(subgroup = as.character(subgroup))
 )
+
+summary_df <- summary_df %>%
+  left_join(test_result_final, by = c("group" = "subgroup"))
+
+# First calculate overall percentage
+overall_percentage <- (overall_tom / overall_total) * 100
+
+summary_df <- summary_df %>%
+  mutate(
+    p.value = as.numeric(p.value),
+    significance = case_when(
+      p.value < 0.05 & percentage > overall_percentage ~ "signi more",
+      p.value < 0.05 & percentage < overall_percentage ~ "signi less", 
+      p.value >= 0.05 ~ "none",
+      TRUE ~ "check"  # for any edge cases
+    ),
+    perc_label = round_excel(percentage)
+  )
+
+#plot
