@@ -9,6 +9,7 @@ library(scales)
 library(magick)
 library(grid)
 library(ggtext)
+library(broom)
 
 load(here::here("03_Df_output", "cleaned_data.RData"))
 rm(C15_long, C16_long)
@@ -120,3 +121,34 @@ summary_df <- bind_rows(
     ungroup()
 )
 
+#setting for the test
+overall_tom <- sum(profile$TOM_1)
+overall_total <- nrow(profile)
+age_group_data <- profile %>% filter(age_group == "18-24")
+age_group_tom <- sum(age_group_data$TOM_1)
+age_group_total <- nrow(age_group_data)
+prop.test(x = c(age_group_tom, overall_tom), 
+          n = c(age_group_total, overall_total))
+
+# Function to test each subgroup against overall
+test_subgroup <- function(subgroup_name, subgroup_value) {
+  if (subgroup_name == "group_var") return(NULL)  # Skip if it's the column name
+  
+  subgroup_data <- profile %>% filter(!!sym(subgroup_name) == subgroup_value)
+  subgroup_tom <- sum(subgroup_data$TOM_1)
+  subgroup_total <- nrow(subgroup_data)
+  
+  if (subgroup_total > 0) {
+    test_result <- prop.test(x = c(subgroup_tom, overall_tom), 
+                             n = c(subgroup_total, overall_total))
+    return(tidy(test_result) %>% mutate(subgroup = subgroup_value, variable = subgroup_name))
+  }
+  return(NULL)
+}
+
+# Run tests for all subgroups
+test_results <- bind_rows(
+  map2("age_group", unique(profile$age_group), test_subgroup),
+  map2("educ", unique(profile$educ), test_subgroup),
+  map2("CSP", unique(profile$CSP), test_subgroup)
+)
