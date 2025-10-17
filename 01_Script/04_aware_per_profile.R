@@ -43,13 +43,13 @@ profile <- survey %>%
 #Creating age_group
 profile <- profile %>%
   mutate(age_group = factor(case_when(
-    A3B >= 18 & A3B <= 24 ~ "18-24",
-    A3B >= 25 & A3B <= 34 ~ "25-34", 
-    A3B >= 35 & A3B <= 44 ~ "35-44",
-    A3B >= 45 & A3B <= 59 ~ "45-59",
-    A3B >= 60 ~ "60+",
+    A3B >= 18 & A3B <= 24 ~ "18-24 years old",
+    A3B >= 25 & A3B <= 34 ~ "25-34 years old", 
+    A3B >= 35 & A3B <= 44 ~ "35-44 years old",
+    A3B >= 45 & A3B <= 59 ~ "45-59 years old",
+    A3B >= 60 ~ "60 years +",
     TRUE ~ NA_character_
-  ), levels = c("18-24", "25-34", "35-44", "45-59", "60+")))
+  ), levels = c("18-24 years old", "25-34 years old", "35-44 years old", "45-59 years old", "60 years +")))
 
 #creating Socioprofessional_group
 profile <- profile %>%
@@ -124,7 +124,7 @@ summary_df <- bind_rows(
 #setting for the test
 overall_tom <- sum(profile$TOM_1)
 overall_total <- nrow(profile)
-age_group_data <- profile %>% filter(age_group == "18-24")
+age_group_data <- profile %>% filter(age_group == "18-24 years old")
 age_group_tom <- sum(age_group_data$TOM_1)
 age_group_total <- nrow(age_group_data)
 prop.test(x = c(age_group_tom, overall_tom), 
@@ -183,7 +183,47 @@ summary_df <- summary_df %>%
       p.value >= 0.05 ~ "none",
       TRUE ~ "check"  # for any edge cases
     ),
-    perc_label = round_excel(percentage)
+    perc_label = round_excel(percentage),
+    plot_label = paste(group, "n=",round_excel(total*600/202), sep=" " )
   )
 
 #plot
+p <- summary_df %>%
+  ggplot(aes( x = group, y = percentage)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  geom_text( data = summary_df %>% filter(percentage >= overall_percentage),
+            aes( y = percentage +5 ,
+                 label = paste(perc_label, "%", sep="")),
+                 color = "black") +
+  geom_text( data = summary_df %>% filter(percentage < overall_percentage),
+             aes(y = percentage -5 ,
+                 label = paste(perc_label, "%", sep="")),
+                 color = "black") +
+  scale_x_discrete(limits = rev(unique(summary_df$group)), #it expect unique
+                   labels = rev(summary_df$plot_label)) +
+  scale_y_continuous(limits = c(-5, 100),
+                     breaks = c(0, overall_percentage, 100),
+                     labels = c(paste0("0", "%"),
+                                paste0(round_excel(overall_percentage), "%"),
+                                paste0("100", "%")),
+                     trans = shift_trans(overall_percentage)) +
+  labs( caption = "Base: General Public n = 600",
+        title = "Distribution of Brand 1 Top of Mind Awareness by Profile") +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major.y = element_blank(),  # Remove vertical grid lines
+    panel.grid.major.x = element_line(color = "gray90", linewidth = 0.5),  # Keep horizontal
+    axis.text.x = element_text(face = "bold", colour = "black"),
+    axis.text.y = element_text(face = "bold", colour = "black"),
+    plot.caption = element_text(
+      size = 12,                    # Larger font size
+      hjust = 0.5,                  # Center alignment (0=left, 0.5=center, 1=right)
+      vjust = 1,                    # Vertical position
+      face = "italic",              # Optional: italic style
+      margin = margin(t = 10)       # Add space above caption
+    ),
+    legend.position = "none"
+  )
+print(p)
