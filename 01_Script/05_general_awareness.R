@@ -37,7 +37,7 @@ brand_see <- aware_df %>%
   relocate(total, .after = last_col()) %>% #relocate the total column at the end
   mutate(
     percentage = n / total * 100,  # Calculate percentage
-    perc_text = round_excel(percentage, 1)  # Excel-style rounded text
+    perc_text = round_excel(percentage)  # Excel-style rounded text
   )
 
 
@@ -53,7 +53,7 @@ brand_reach <- aware_df %>%
   summarise(
     reach = n_distinct(QUEST),  # Actual unique people who mentioned this brand
     total_percentage = reach / n_distinct(to_get_total$QUEST) * 100,
-    total_perc_text = round_excel(total_percentage, 1)
+    total_perc_text = round_excel(total_percentage)
   ) %>%
   left_join(code_to_label, by = c("brand" = "code")) %>%
   mutate(brand = label) %>%
@@ -110,7 +110,8 @@ p <- ggplot(brand_see, aes( x =brand, y = percentage, fill = type ))+
              aes(x = brand, y = total_perc_text +5,
                  label = paste0(total_perc_text, "%")),
              inherit.aes = FALSE)+
-  labs(title = "Brand Awareness")+
+  labs(title = "Brand Awareness",
+       caption = "Base: General Public n = 600" )+
   guides(
     fill = guide_legend(title = NULL),
     shape = guide_legend(title = NULL),
@@ -121,7 +122,16 @@ p <- ggplot(brand_see, aes( x =brand, y = percentage, fill = type ))+
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     panel.grid = element_blank(),
     axis.text.x = element_text(face = "bold", colour = "black"),
-    axis.text.y = element_blank() # Fixed: Added closing parenthesis
+    axis.text.y = element_blank(), # Fixed: Added closing parenthesis
+    plot.caption = element_text(
+      size = 12,
+      hjust = 0.5,
+      vjust = 1,
+      face = "italic",
+      margin = margin(t = 10)
+    ),
   )
 
 print(p)  
+ggsave(here::here("04_Graphic_output", "awareness.png"),
+       plot = p, width = 10, height = 6, dpi = 600)
