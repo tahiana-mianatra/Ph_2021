@@ -64,9 +64,10 @@ profile <- profile %>%
                 "Economically inactive")))
 #Labeling A4E
 profile <- profile %>%
+  mutate (A4E = ifelse(A4E == 7, 5, A4E)) %>%
   left_join(survey_labels[["A4E"]], by = c("A4E" = "code")) %>%
   mutate( A4E = factor(A4E,
-                      levels = c("1", "2", "3", "4", "5", "6"),
+                      levels = c("1", "2", "3", "4", "5"),
                       ordered = TRUE)) %>%
   rename(educ = label) %>%
   mutate(educ = factor(educ, 
@@ -186,12 +187,27 @@ summary_df <- summary_df %>%
     perc_label = round_excel(percentage),
     plot_label = paste(group, "n=",round_excel(total*600/202), sep=" " )
   )
+summary_df <- summary_df %>%
+  mutate(profile_type = case_when(
+    group == "Overall" ~ "Overall",
+    group %in% unique(profile$age_group) ~ "Age Group",
+    group %in% unique(profile$educ) ~ "Education", 
+    group %in% unique(profile$CSP) ~ "Socio-professional",
+    TRUE ~ "Other"
+  ))
 
 #plot
 p <- summary_df %>%
   ggplot(aes( x = group, y = percentage)) +
   geom_bar(stat = "identity") +
   coord_flip() +
+  #Header
+  geom_text(data = . %>% filter(profile_type != "Overall") %>%
+              group_by(profile_type) %>%
+              slice(1) %>%  # First row of each group
+              mutate(label_x = -2),  # Position to the left of y-axis
+            aes(x = group, y = -5, label = profile_type),
+            fontface = "bold", size = 4, hjust = 0.5, angle = 90) +  # Vertical text
   geom_text( data = summary_df %>% filter(percentage >= overall_percentage),
             aes( y = percentage +5 ,
                  label = paste(perc_label, "%", sep="")),
@@ -213,8 +229,9 @@ p <- summary_df %>%
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    panel.grid.major.y = element_blank(),  # Remove vertical grid lines
-    panel.grid.major.x = element_line(color = "gray90", linewidth = 0.5),  # Keep horizontal
+    panel.grid.major.y = element_blank(), #It will be on the center of the bar
+    panel.grid.major.x = element_blank(),  # Keep horizontal
+    panel.grid = element_blank(),
     axis.text.x = element_text(face = "bold", colour = "black"),
     axis.text.y = element_text(face = "bold", colour = "black"),
     plot.caption = element_text(
@@ -227,3 +244,122 @@ p <- summary_df %>%
     legend.position = "none"
   )
 print(p)
+
+#Working table like plot
+p <- summary_df %>%
+  ggplot(aes(x = group, y = percentage)) +
+  
+  # Rectangle framing each bar + label
+  geom_rect(
+    data = summary_df %>%
+      mutate(row_num = as.numeric(factor(group, levels = rev(unique(group))))) %>%
+      group_by(profile_type) %>%
+      summarise(
+        xmin = min(row_num) - 0.5,
+        xmax = max(row_num) + 0.5,
+        ymin = -35,
+        ymax = 100
+      ),
+    aes(
+      xmin = xmin,
+      xmax = xmax,
+      ymin = ymin,
+      ymax = ymax
+    ),
+    fill = NA,
+    color = "gray30",
+    linewidth = 0.8,
+    inherit.aes = FALSE
+  )+
+  # Bars
+  geom_bar(stat = "identity",
+           aes(fill = case_when(
+             significance == "signi more" ~ "signi more",
+             significance == "signi less" ~ "signi less",
+             TRUE ~ "none"
+           ))) +
+  coord_flip() +
+  geom_text(data = . %>% filter(profile_type != "Overall") %>%
+              group_by(profile_type) %>%
+              slice(1) %>%  # First row of each group
+              mutate(label_x = -1),  # Position to the left of y-axis
+            aes(x = group, y = -40, label = profile_type),
+            fontface = "bold", size = 4, hjust = 1, angle = 90) +  # Vertical text
+  
+  # Text labels for percentages (above or below bars)
+  geom_text(
+    data = summary_df %>% filter(percentage >= overall_percentage),
+    aes(y = percentage + 5, label = paste0(perc_label, "%")),
+    color = "black"
+  ) +
+  geom_text(
+    data = summary_df %>% filter(percentage < overall_percentage),
+    aes(y = percentage - 5, label = paste0(perc_label, "%")),
+    color = "black"
+  ) +
+  
+  # Custom labels INSIDE the rectangles (replacing axis labels)
+  geom_text(
+    data = summary_df %>%
+      mutate(row_num = as.numeric(factor(group, levels = rev(unique(group))))),
+    aes(
+      x = group,
+      y = -3,                # position inside left side of rectangle
+      label = plot_label
+    ),
+    hjust = 1,               # right align label text
+    color = "black",
+    fontface = "bold",
+    size = 4
+  ) +
+  scale_fill_manual(
+    values = c(
+      "signi more" = "blue",
+      "signi less" = "red",
+      "none" = "grey80" # this will be overridden by default fill if not specified
+    ),
+    guide = "none"
+  ) +
+  # Axes
+  scale_x_discrete(
+    limits = rev(unique(summary_df$group)),
+    labels = NULL  # remove external axis labels
+  ) +
+  scale_y_continuous(
+    limits = c(-40, 100),
+    breaks = c(0, overall_percentage, 100),
+    labels = c(
+      paste0("0", "%"),
+      paste0(round_excel(overall_percentage), "%"),
+      paste0("100", "%")
+    ),
+    trans = shift_trans(overall_percentage)
+  ) +
+  
+  # Titles and captions
+  labs(
+    caption = "Base: General Public n = 600",
+    title = "Distribution of Brand 1 Top of Mind Awareness by Profile"
+  ) +
+  
+  # Clean theme
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text.x = element_text(face = "bold", colour = "black"),
+    axis.text.y = element_blank(),   # hide original y labels
+    panel.grid = element_blank(),
+    panel.grid.major.x = element_blank(),
+    plot.caption = element_text(
+      size = 12,
+      hjust = 0.5,
+      vjust = 1,
+      face = "italic",
+      margin = margin(t = 10)
+    ),
+    legend.position = "none"
+  )
+
+print(p)
+ggsave(here::here("04_Graphic_output", "brandxprofile.png"),
+       plot = p, width = 10, height = 6, dpi = 600)
