@@ -10,7 +10,7 @@ library(magick)
 library(grid)
 library(ggtext)
 library(broom) #for clean result on prop.test
-
+#Load data
 load(here::here("03_Df_output", "cleaned_data.RData"))
 rm(C15_long, C16_long)
 excel_path <- here::here("02_Input", "Code_to_label.xlsx") # Replace with your actual file path
