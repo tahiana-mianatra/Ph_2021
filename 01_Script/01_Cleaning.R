@@ -22,6 +22,7 @@ survey <- survey %>%
   ))
 #Step 3 : preparing brand awareness long format
 aware <- survey %>%
+  filter( A1 == 1)%>%
   select(QUEST,B1A, B1B)
 tom <- aware %>%
   filter(!is.na(B1A) & B1A != "") %>%
@@ -59,6 +60,7 @@ tom_spont_conflict <- aware %>%
   select(QUEST, brand = TOM)
  #Assisted awareness
 assisted <- survey %>%
+  filter(A1 == 1) %>%
   select(QUEST, starts_with("B2_")) %>%
   pivot_longer(
     cols = starts_with("B2_"),
