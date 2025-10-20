@@ -362,4 +362,4 @@ p <- summary_df %>%
 
 print(p)
 ggsave(here::here("04_Graphic_output", "brandxprofile.png"),
-       plot = p, width = 15, height = 6, dpi = 600)
+       plot = p, width = 15, height = 8, dpi = 600)
