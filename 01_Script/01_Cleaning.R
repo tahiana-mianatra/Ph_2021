@@ -101,7 +101,20 @@ C16_long <- reason_no %>%
   mutate(
     C16 = as.numeric(C16)
   )
+C11_long <- survey %>%
+  filter(A1 == 1) %>%
+  select( QUEST, C11) %>%
+  mutate(across(
+    .cols = C11,
+    .fns = ~ replace(.x, is.na(.x), 99)                
+  )) %>%
+  separate_rows(C11, sep = "-") %>%
+  filter(!is.na(C11) & C11 !="") %>%
+  mutate(
+    C11 = as.numeric(C11)
+  )
+  
 #Writing the data
-save(survey, aware_long_complete, C15_long, C16_long,
+save(survey, aware_long_complete, C15_long, C16_long,C11_long,
      file = here::here("03_Df_output", "cleaned_data.RData"))
 
