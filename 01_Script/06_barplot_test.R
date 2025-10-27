@@ -91,7 +91,7 @@ univariable_normal_barplots <- function(
         labs(
           x = "",
           y = "",
-          title = var_meta$Title,
+          title = var_meta$title,
           caption = var_meta$captions
         ) +
         theme_minimal() +
