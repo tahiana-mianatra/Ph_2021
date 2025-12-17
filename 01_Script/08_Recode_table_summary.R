@@ -42,4 +42,9 @@ job <- complete_coded %>%
   summarise(
     count = n_distinct(QUEST)
   )
-  
+ 
+degree <- complete_coded %>% 
+  group_by(A4E) %>% 
+  summarise(
+    count = n_distinct(QUEST)
+  ) 
