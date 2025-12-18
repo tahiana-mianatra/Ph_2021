@@ -4,6 +4,15 @@ library(tidyverse)
 library(here)
 #Load data
 load(here::here("03_Df_output", "cleaned_data.RData"))
+#Load function
+round_excel <- function(x, digits = 0) {
+  posneg <- sign(x)
+  z <- abs(x) * 10^digits
+  z <- z + 0.5
+  z <- trunc(z)
+  z <- z / 10^digits
+  z * posneg
+}
 #Summarize
 normal <- survey %>% 
   filter(A1 == 1) %>% 
@@ -41,10 +50,16 @@ job <- complete_coded %>%
   group_by(A4B) %>% 
   summarise(
     count = n_distinct(QUEST)
+  ) %>% 
+  mutate(
+    prop = paste0(round_excel(count *100 / sum(count)), "%")  
   )
  
 degree <- complete_coded %>% 
   group_by(A4E) %>% 
   summarise(
     count = n_distinct(QUEST)
-  ) 
+  )  %>% 
+  mutate(
+    prop = paste0(round_excel(count *100 / sum(count)), "%") 
+  )
